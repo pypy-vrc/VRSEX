@@ -147,12 +147,12 @@ namespace VRSEX
                 }
                 catch (Exception x)
                 {
-                    MainForm.Instance.ShowMessage(x.Message);
+                    MainForm.Instance.ShowMessage(endpoint + ":" + x.Message);
                 }
             }
             catch (Exception x)
             {
-                MainForm.Instance.ShowMessage(x.Message);
+                MainForm.Instance.ShowMessage(endpoint + ":" + x.Message);
             }
         }
 
