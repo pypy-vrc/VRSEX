@@ -88,22 +88,22 @@ namespace VRSEX
                 /*if (DateTime.Now.CompareTo(m_NextUpdateVisits) >= 0)
                 {
                     VRCApi.FetchVisits();
-                    m_NextUpdateVisits = DateTime.Now.AddSeconds(60);
+                    m_NextUpdateVisits = DateTime.Now.AddSeconds(300);
                 }*/
                 if (DateTime.Now.CompareTo(m_NextFetchCurrentUser) >= 0)
                 {
                     ApiUser.FetchCurrentUser();
-                    m_NextFetchCurrentUser = DateTime.Now.AddSeconds(60);
+                    m_NextFetchCurrentUser = DateTime.Now.AddSeconds(120);
                 }
                 if (DateTime.Now.CompareTo(m_NextFetchModeration) >= 0)
                 {
                     ApiPlayerModeration.FetchAllAgainstMe();
-                    m_NextFetchModeration = DateTime.Now.AddSeconds(60);
+                    m_NextFetchModeration = DateTime.Now.AddSeconds(120);
                 }
                 if (DateTime.Now.CompareTo(m_NextFetchFavorite) >= 0)
                 {
                     ApiFavorite.FetchList(ApiFavorite.FavoriteType.Friend);
-                    m_NextFetchFavorite = DateTime.Now.AddSeconds(60);
+                    m_NextFetchFavorite = DateTime.Now.AddSeconds(120);
                 }
                 if (DateTime.Now.CompareTo(m_NextUpdateLog) >= 0)
                 {
@@ -262,7 +262,7 @@ namespace VRSEX
             }
             else
             {
-                m_NextFetchVisits = DateTime.Now.AddSeconds(60);
+                m_NextFetchVisits = DateTime.Now.AddSeconds(300);
                 ShowMessage("Online User(s) : " + data);
             }
         }
@@ -325,7 +325,7 @@ namespace VRSEX
             else
             {
                 LastLoginSuccess = true;
-                m_NextFetchCurrentUser = DateTime.Now.AddSeconds(60);
+                m_NextFetchCurrentUser = DateTime.Now.AddSeconds(120);
                 m_CurrentUser = user;
                 ApiUser.FetchFriends();
                 if (user.friends != null)
@@ -532,7 +532,7 @@ namespace VRSEX
             }
             else
             {
-                m_NextFetchModeration = DateTime.Now.AddSeconds(60);
+                m_NextFetchModeration = DateTime.Now.AddSeconds(120);
                 var dic = new Dictionary<string, ApiPlayerModeration>();
                 foreach (var moderation in moderations)
                 {

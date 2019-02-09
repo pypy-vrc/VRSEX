@@ -89,7 +89,7 @@ namespace VRSEX
 
     public class VRSEX
     {
-        public static readonly string APP = "VRSEX v0.03a";
+        public static readonly string APP = "VRSEX v0.03b";
         private const int XS = 1024;
         private const int YS = 1536;
 

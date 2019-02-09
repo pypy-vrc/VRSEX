@@ -142,17 +142,24 @@ namespace VRSEX
                 {
                     using (var response = w.Response as HttpWebResponse)
                     {
-                        HandleJson<ApiResponse>(response, MainForm.Instance.OnResponse);
+                        if (response.ContentType != null && response.ContentType.IndexOf("json", StringComparison.OrdinalIgnoreCase) != -1)
+                        {
+                            HandleJson<ApiResponse>(response, MainForm.Instance.OnResponse);
+                        }
+                        else
+                        {
+                            MainForm.Instance.ShowMessage(endpoint + ": " + w.Message);
+                        }
                     }
                 }
                 catch (Exception x)
                 {
-                    MainForm.Instance.ShowMessage(endpoint + ":" + x.Message);
+                    MainForm.Instance.ShowMessage(endpoint + ": " + x.Message);
                 }
             }
             catch (Exception x)
             {
-                MainForm.Instance.ShowMessage(endpoint + ":" + x.Message);
+                MainForm.Instance.ShowMessage(endpoint + ": " + x.Message);
             }
         }
 
@@ -191,6 +198,10 @@ namespace VRSEX
                         }
                     }
                 }
+            }
+            catch (WebException w)
+            {
+                MainForm.Instance.ShowMessage(w.Message);
             }
             catch (Exception x)
             {
@@ -436,58 +447,70 @@ namespace VRSEX
 
         public static void Update()
         {
-            var path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"Low\VRChat\VRChat\output_log.txt";
-            if (File.Exists(path))
+            try
             {
-                try
+                var directory = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"Low\VRChat\VRChat");
+                if (directory != null && directory.Exists)
                 {
-                    using (var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    FileInfo target = null;
+                    foreach (var info in directory.GetFiles("output_log_*.txt", SearchOption.TopDirectoryOnly))
                     {
-                        using (var stream = new BufferedStream(file, 64 * 1024))
+                        if (target == null || info.LastAccessTime.CompareTo(target.LastAccessTime) >= 0)
                         {
-                            using (var reader = new StreamReader(stream, Encoding.UTF8))
+                            target = info;
+                        }
+                    }
+                    if (target != null)
+                    {
+                        using (var file = target.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        {
+                            using (var stream = new BufferedStream(file, 64 * 1024))
                             {
-                                var line = string.Empty;
-                                while ((line = reader.ReadLine()) != null)
+                                using (var reader = new StreamReader(stream, Encoding.UTF8))
                                 {
-                                    if (line.Length > 34 &&
-                                        line[20] == 'L' &&
-                                        line[21] == 'o' &&
-                                        line[22] == 'g' &&
-                                        line[31] == '-')
+                                    var line = string.Empty;
+                                    while ((line = reader.ReadLine()) != null)
                                     {
-                                        var s = line.Substring(0, 19);
-                                        if (m_FirstLog.Equals(s))
+                                        if (line.Length > 34 &&
+                                            line[20] == 'L' &&
+                                            line[21] == 'o' &&
+                                            line[22] == 'g' &&
+                                            line[31] == '-')
                                         {
-                                            stream.Position = m_Position;
+                                            var s = line.Substring(0, 19);
+                                            if (m_FirstLog.Equals(s))
+                                            {
+                                                stream.Position = m_Position;
+                                            }
+                                            else
+                                            {
+                                                m_FirstLog = s;
+                                            }
+                                            Parse(line);
+                                            break;
                                         }
-                                        else
-                                        {
-                                            m_FirstLog = s;
-                                        }
-                                        Parse(line);
-                                        break;
                                     }
-                                }
-                                while ((line = reader.ReadLine()) != null)
-                                {
-                                    if (line.Length > 34 &&
-                                        line[20] == 'L' &&
-                                        line[21] == 'o' &&
-                                        line[22] == 'g' &&
-                                        line[31] == '-')
+                                    while ((line = reader.ReadLine()) != null)
                                     {
-                                        Parse(line);
+                                        if (line.Length > 34 &&
+                                            line[20] == 'L' &&
+                                            line[21] == 'o' &&
+                                            line[22] == 'g' &&
+                                            line[31] == '-')
+                                        {
+                                            Parse(line);
+                                        }
                                     }
+                                    m_Position = stream.Position;
                                 }
-                                m_Position = stream.Position;
                             }
                         }
                     }
                 }
-                catch
-                {
-                }
+            }
+            catch
+            {
+
             }
         }
 
@@ -497,40 +520,7 @@ namespace VRSEX
             {
                 if (line[34] == '[')
                 {
-                    if (line[44] == ']')
-                    {
-                        var s = line.Substring(34);
-                        if (s.StartsWith("[VRCPlayer] Switching "))
-                        {
-                            s = line.Substring(56);
-                            var i = s.IndexOf(" to avatar ");
-                            if (i > 0)
-                            {
-                                s = s.Substring(0, i);
-                                if (!string.IsNullOrEmpty(m_UserID))
-                                {
-                                    if (!string.Equals(s, m_CurrentUser) &&
-                                        !m_InRoom.ContainsKey(s))
-                                    {
-                                        VRSEX.SetActivity(new ActivityInfo
-                                        {
-                                            Type = ActivityType.PlayerJoined,
-                                            Text = line.Substring(11, 5) + " " + s + " has joined",
-                                            Tag = s,
-                                            Group = MainForm.Instance.GetFriendsGroupIndex(m_UserID)
-                                        });
-                                    }
-                                    m_InRoom[s] = m_UserID;
-                                    m_UserID = string.Empty;
-                                }
-                            }
-                        }
-                        else if (s.StartsWith("[VRCPlayer] Received API user "))
-                        {
-                            m_UserID = line.Substring(64);
-                        }
-                    }
-                    else if (line[46] == ']')
+                    if (line[46] == ']')
                     {
                         var s = line.Substring(34);
                         if (s.StartsWith("[RoomManager] Joining "))
@@ -592,6 +582,41 @@ namespace VRSEX
                         if (s.StartsWith("[VRCFlowManagerVRC] User Authenticated: "))
                         {
                             m_CurrentUser = line.Substring(74);
+                        }
+                    }
+                }
+                else if (line[34] == 'R')
+                {
+                    var s = line.Substring(34);
+                    if (s.StartsWith("Received API user "))
+                    {
+                        m_UserID = line.Substring(52);
+                    }
+                }
+                else if (line[34] == 'S')
+                {
+                    var s = line.Substring(34);
+                    if (s.StartsWith("Switching "))
+                    {
+                        var i = s.IndexOf(" to avatar ");
+                        if (i > 10)
+                        {
+                            s = s.Substring(10, i - 10);
+                            if (!string.IsNullOrEmpty(m_UserID))
+                            {
+                                if (!m_InRoom.ContainsKey(s))
+                                {
+                                    VRSEX.SetActivity(new ActivityInfo
+                                    {
+                                        Type = ActivityType.PlayerJoined,
+                                        Text = line.Substring(11, 5) + " " + s + " has joined",
+                                        Tag = s,
+                                        Group = MainForm.Instance.GetFriendsGroupIndex(m_UserID)
+                                    });
+                                }
+                                m_InRoom[s] = m_UserID;
+                                m_UserID = string.Empty;
+                            }
                         }
                     }
                 }
