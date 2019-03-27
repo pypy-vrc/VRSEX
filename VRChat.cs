@@ -33,7 +33,7 @@ namespace VRSEX
 
     public static class VRCApi
     {
-        private static readonly string API_URL = "https://vrchat.net/api/1/";
+        private static readonly string API_URL = "https://api.vrchat.cloud/api/1/";
         private static readonly string COOKIE_FILE_NAME = "cookie.dat";
         private static string m_ApiKey = string.Empty;
         private static CookieContainer m_CookieContainer = new CookieContainer();
